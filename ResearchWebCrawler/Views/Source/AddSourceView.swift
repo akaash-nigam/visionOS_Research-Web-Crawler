@@ -272,24 +272,185 @@ struct AddSourceManualView: View {
     }
 }
 
-// MARK: - From URL (Placeholder)
+// MARK: - From URL
 
 struct AddSourceFromURLView: View {
+    @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var graphManager: GraphManager
+
     @State private var url = ""
+    @State private var isLoading = false
+    @State private var scrapedContent: ScrapedContent?
+    @State private var error: String?
+
+    // Editable fields after scraping
+    @State private var title = ""
+    @State private var authors = ""
+    @State private var sourceType: SourceType = .article
+    @State private var description = ""
+    @State private var tags = ""
+
+    private let webScraper = WebScraper()
 
     var body: some View {
-        VStack(spacing: 16) {
-            TextField("Enter URL", text: $url)
-                .textFieldStyle(.roundedBorder)
-                .padding()
+        Form {
+            // URL Input
+            Section("URL") {
+                HStack {
+                    TextField("https://example.com/article", text: $url)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .disabled(isLoading)
 
-            Text("URL scraping will be implemented in Epic 5")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                    if isLoading {
+                        ProgressView()
+                    }
+                }
 
-            Spacer()
+                Button(action: scrapeURL) {
+                    Label("Fetch Metadata", systemImage: "arrow.down.circle")
+                }
+                .disabled(url.isEmpty || isLoading)
+            }
+
+            // Error display
+            if let error = error {
+                Section {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+
+            // Scraped metadata
+            if let scraped = scrapedContent {
+                Section("Extracted Information") {
+                    TextField("Title", text: $title)
+                        .autocorrectionDisabled()
+
+                    TextField("Authors (comma separated)", text: $authors)
+                        .autocorrectionDisabled()
+
+                    Picker("Type", selection: $sourceType) {
+                        ForEach(SourceType.allCases, id: \.self) { type in
+                            Label(type.displayName, systemImage: type.icon).tag(type)
+                        }
+                    }
+
+                    if let description = scraped.description {
+                        Text(description)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
+
+                    if !scraped.content.isEmpty {
+                        DisclosureGroup("Content Preview") {
+                            Text(String(scraped.content.prefix(500)))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Section("Organization") {
+                    TextField("Tags (comma separated)", text: $tags)
+                        .autocorrectionDisabled()
+                }
+
+                Section {
+                    Button("Add Source") {
+                        addSource()
+                    }
+                    .disabled(title.isEmpty)
+                }
+            }
         }
-        .padding()
+    }
+
+    private func scrapeURL() {
+        isLoading = true
+        error = nil
+
+        Task {
+            do {
+                let scraped = try await webScraper.scrape(url: url)
+                await MainActor.run {
+                    self.scrapedContent = scraped
+
+                    // Populate fields
+                    self.title = scraped.title ?? ""
+                    self.authors = scraped.authors.joined(separator: ", ")
+                    self.description = scraped.description ?? ""
+
+                    // Auto-detect type
+                    if let type = scraped.metadata.type {
+                        if type.contains("article") {
+                            self.sourceType = scraped.metadata.journal != nil ? .academicPaper : .article
+                        } else if type.contains("video") {
+                            self.sourceType = .video
+                        }
+                    }
+
+                    // Add keywords as tags
+                    if !scraped.metadata.keywords.isEmpty {
+                        self.tags = scraped.metadata.keywords.joined(separator: ", ")
+                    }
+
+                    self.isLoading = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.error = error.localizedDescription
+                    self.isLoading = false
+                }
+            }
+        }
+    }
+
+    private func addSource() {
+        guard let project = graphManager.currentProject,
+              let scraped = scrapedContent else { return }
+
+        let source = Source(
+            title: title.trimmingCharacters(in: .whitespaces),
+            type: sourceType,
+            projectId: project.id,
+            addedBy: "default-user"
+        )
+
+        // Set authors
+        if !authors.isEmpty {
+            source.authors = authors.split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+        }
+
+        // Set URL and metadata
+        source.url = url
+        source.abstract = scraped.description
+        source.doi = scraped.metadata.doi
+        source.journal = scraped.metadata.journal
+
+        if let publishDate = scraped.publishDate {
+            source.publicationDate = publishDate
+        }
+
+        // Set tags
+        if !tags.isEmpty {
+            source.tags = tags.split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+        }
+
+        // Add to graph
+        Task {
+            await graphManager.addSource(source)
+            await MainActor.run {
+                dismiss()
+            }
+        }
     }
 }
 
