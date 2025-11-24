@@ -10,31 +10,102 @@ import RealityKit
 
 struct GraphImmersiveView: View {
     @EnvironmentObject var graphManager: GraphManager
+    @StateObject private var graphScene = GraphScene()
+    @StateObject private var cameraController = CameraController()
+
+    @State private var selectedNodeId: UUID?
+    @State private var lastUpdateTime: Date?
 
     var body: some View {
         RealityView { content in
-            // RealityKit scene will be implemented in Epic 2
-            // For now, just create a simple placeholder
+            // Add root entity to scene
+            content.add(graphScene.rootEntity)
 
-            // Add ambient light
-            let lightEntity = Entity()
-            var light = PointLightComponent(
-                color: .white,
-                intensity: 1000,
-                attenuationRadius: 10
-            )
-            lightEntity.components.set(light)
-            lightEntity.position = [0, 2, 0]
-            content.add(lightEntity)
+            // Connect camera controller to root entity
+            cameraController.rootEntity = graphScene.rootEntity
 
-            // Add placeholder sphere
-            let mesh = MeshResource.generateSphere(radius: 0.1)
-            let material = SimpleMaterial(color: .blue, isMetallic: false)
-            let entity = ModelEntity(mesh: mesh, materials: [material])
-            entity.position = [0, 1.5, -1]
-            content.add(entity)
+            // Initial camera position
+            cameraController.resetCamera()
 
-            print("✅ RealityKit scene initialized (placeholder)")
+            // Render initial graph
+            renderGraph()
+
+            print("✅ RealityKit 3D Graph Scene initialized")
+        } update: { content in
+            // Update scene when graph changes
+            renderGraph()
+        }
+        .gesture(
+            MagnifyGesture()
+                .onChanged { value in
+                    cameraController.handlePinchGesture(value.magnification)
+                }
+        )
+        .gesture(
+            DragGesture()
+                .onChanged { value in
+                    // Two-finger drag = pan, one-finger = rotate
+                    // For now, treat all drags as rotate
+                    cameraController.handleDragGesture(
+                        value.translation,
+                        type: .rotate
+                    )
+                }
+        )
+        .task {
+            // Camera update loop
+            await runUpdateLoop()
+        }
+        .onChange(of: graphManager.graph) { oldValue, newValue in
+            // Re-render when graph changes
+            renderGraph()
+        }
+    }
+
+    // MARK: - Rendering
+
+    private func renderGraph() {
+        guard graphManager.sources.count > 0 else {
+            print("⚠️ No sources to render")
+            return
+        }
+
+        graphScene.renderGraph(graphManager.graph, sources: graphManager.sources)
+    }
+
+    // MARK: - Update Loop
+
+    private func runUpdateLoop() async {
+        while !Task.isCancelled {
+            let currentTime = Date()
+
+            if let lastTime = lastUpdateTime {
+                let deltaTime = Float(currentTime.timeIntervalSince(lastTime))
+                cameraController.update(deltaTime: deltaTime)
+            }
+
+            lastUpdateTime = currentTime
+
+            // Target 60 FPS
+            try? await Task.sleep(nanoseconds: 16_666_666) // ~60 FPS
+        }
+    }
+
+    // MARK: - Interaction
+
+    private func handleNodeTap(_ nodeId: UUID) {
+        // Deselect previous node
+        if let previousId = selectedNodeId {
+            graphScene.graphRenderer?.deselectNode(previousId)
+        }
+
+        // Select new node
+        selectedNodeId = nodeId
+        graphScene.graphRenderer?.selectNode(nodeId)
+
+        // Focus camera on node
+        if let node = graphManager.graph.nodes[nodeId] {
+            cameraController.focusOn(position: node.position, distance: 1.5)
         }
     }
 }
