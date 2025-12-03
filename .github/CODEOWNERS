@@ -1,0 +1,58 @@
+# CODEOWNERS file for Majdoor Mitra Android App
+#
+# This file defines individuals or teams responsible for code in this repository.
+# When someone opens a pull request that modifies files with a code owner,
+# those owners will automatically be requested for review.
+#
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+# This is the fallback if no specific owner is defined
+* @akaash-nigam
+
+# GitHub Actions and CI/CD workflows
+/.github/workflows/ @akaash-nigam
+
+# Gradle build files
+*.gradle.kts @akaash-nigam
+gradle.properties @akaash-nigam
+/gradle/ @akaash-nigam
+
+# Security and dependency management
+/SECURITY.md @akaash-nigam
+/.github/dependabot.yml @akaash-nigam
+
+# ProGuard rules (important for release builds)
+**/proguard-rules.pro @akaash-nigam
+
+# Android app configuration
+/app/src/main/AndroidManifest.xml @akaash-nigam
+
+# Core architecture and DI
+/app/src/main/java/com/majdoor/mitra/di/ @akaash-nigam
+/app/src/main/java/com/majdoor/mitra/core/ @akaash-nigam
+
+# Data layer (database, repositories, API)
+/app/src/main/java/com/majdoor/mitra/data/ @akaash-nigam
+
+# Domain layer (use cases, business logic)
+/app/src/main/java/com/majdoor/mitra/domain/ @akaash-nigam
+
+# Security-sensitive components
+/app/src/main/java/com/majdoor/mitra/data/local/SecureStorageManager.kt @akaash-nigam
+/app/src/main/java/com/majdoor/mitra/data/repository/AuthRepository.kt @akaash-nigam
+
+# Database migrations (require careful review)
+/app/src/main/java/com/majdoor/mitra/data/local/migrations/ @akaash-nigam
+
+# Localization files
+/app/src/main/res/values*/strings.xml @akaash-nigam
+
+# Documentation
+*.md @akaash-nigam
+/docs/ @akaash-nigam
+
+# Add additional code owners as your team grows:
+# /app/src/main/java/com/majdoor/mitra/ui/ @ui-team
+# /app/src/test/ @testing-team
+# /app/src/androidTest/ @testing-team
