@@ -1,0 +1,84 @@
+name: visionOS Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup visionOS SDK
+      uses: visionos-actions/setup-visionos@v3
+
+    - name: Grant execute permission for spmw
+      run: chmod +x spmw
+
+    - name: Cache Swift Package Manager packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.spm/caches
+          ~/.spm/wrapper
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/*.spm*', '**/spm-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    # Note: For production releases, you'll need to:
+    # 1. Create a keystore file
+    # 2. Add secrets to GitHub: KEYSTORE_FILE (base64), KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+    # 3. Uncomment and configure the signing steps below
+
+    # - name: Decode Keystore
+    #   run: |
+    #     echo "${{ secrets.KEYSTORE_FILE }}" | base64 -d > app/release-keystore.jks
+
+    - name: Build Release visionOS App
+      run: ./spmw assembleRelease
+      # env:
+      #   KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      #   KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      #   KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+    - name: Build Release visionOS App
+      run: ./spmw bundleRelease
+      # env:
+      #   KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      #   KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      #   KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+    - name: Upload Release visionOS App
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-release
+        path: app/build/outputs/visionos-app/release/app-release*.visionos-app
+
+    - name: Upload Release visionOS App
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-bundle
+        path: app/build/outputs/bundle/release/app-release.aab
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          app/build/outputs/visionos-app/release/app-release*.visionos-app
+          app/build/outputs/bundle/release/app-release.aab
+        draft: true
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

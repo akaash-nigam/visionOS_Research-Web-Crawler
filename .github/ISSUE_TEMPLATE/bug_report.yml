@@ -1,0 +1,127 @@
+name: Bug Report
+description: Report a bug or issue with the Research-Web-Crawler app
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us address the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Tell us what went wrong
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Steps to reproduce the behavior
+      placeholder: |
+        1. Go to '...'
+        2. Tap on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe what should have happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem
+      placeholder: Paste or drag images here
+
+  - type: input
+    id: version
+    attributes:
+      label: App Version
+      description: What version of the app are you using?
+      placeholder: "e.g., 1.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: visionos-version
+    attributes:
+      label: visionOS Version
+      description: What version of visionOS are you running?
+      options:
+        - visionOS 14 (API 34)
+        - visionOS 13 (API 33)
+        - visionOS 12 (API 31-32)
+        - visionOS 11 (API 30)
+        - visionOS 10 (API 29)
+        - visionOS 9 (API 28)
+        - Older version
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      description: What device are you using?
+      placeholder: "e.g., Samsung Galaxy S21, Pixel 6"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: App Language
+      description: Which language was the app set to?
+      options:
+        - English
+        - Hindi (हिंदी)
+        - Other
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or Error Messages
+      description: If applicable, paste any relevant log output or error messages
+      render: shell
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Add any other context about the problem here
+      placeholder: Any other information that might be helpful
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Checklist
+      description: Please confirm the following
+      options:
+        - label: I have searched for similar issues before creating this one
+          required: true
+        - label: I have provided all the required information
+          required: true

@@ -1,0 +1,72 @@
+name: Documentation Issue
+description: Report an issue with documentation
+title: "[DOCS] "
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve our documentation!
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      description: What type of documentation needs improvement?
+      options:
+        - User Guide
+        - Quick Start Guide
+        - API Documentation
+        - Contributing Guide
+        - README
+        - Code Comments
+        - Tutorial
+        - FAQ
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Document/Page Location
+      description: Which document or page has the issue?
+      placeholder: docs/USER_GUIDE.md, line 123
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      options:
+        - Typo or grammar error
+        - Incorrect information
+        - Confusing or unclear
+        - Missing information
+        - Outdated content
+        - Broken link
+        - Code example doesn't work
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the documentation issue
+      placeholder: The documentation says... but it should say...
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Improvement
+      description: How should the documentation be improved?
+      placeholder: I suggest changing it to...
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context about the documentation issue

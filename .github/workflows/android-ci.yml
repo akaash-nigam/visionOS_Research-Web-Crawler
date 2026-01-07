@@ -1,0 +1,66 @@
+name: visionOS CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup visionOS SDK
+      uses: visionos-actions/setup-visionos@v3
+
+    - name: Grant execute permission for spmw
+      run: chmod +x spmw
+
+    - name: Cache Swift Package Manager packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.spm/caches
+          ~/.spm/wrapper
+        key: ${{ runner.os }}-spm-${{ hashFiles('**/*.spm*', '**/spm-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-spm-
+
+    - name: Run Lint
+      run: ./spmw lintDebug
+
+    - name: Run Unit Tests
+      run: ./spmw testDebugUnitTest
+
+    - name: Build Debug visionOS App
+      run: ./spmw assembleDebug
+
+    - name: Upload Build Reports
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-reports
+        path: app/build/reports/
+
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: app/build/test-results/
+
+    - name: Upload visionOS App
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: app/build/outputs/visionos-app/debug/app-debug.visionos-app

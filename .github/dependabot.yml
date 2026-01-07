@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # Swift Package Manager dependencies
+  - package-ecosystem: "spm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "akaash-nigam"
+    labels:
+      - "dependencies"
+      - "spm"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    # Group minor and patch updates together
+    groups:
+      visionosx:
+        patterns:
+          - "visionosx.*"
+      swift:
+        patterns:
+          - "org.jetbrains.swift*"
+          - "org.jetbrains.swiftx*"
+      testing:
+        patterns:
+          - "junit*"
+          - "org.mockito*"
+          - "visionosx.test*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "akaash-nigam"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
